@@ -3,8 +3,7 @@
 
 int main(int argc, char const *argv[]) {
     try {
-        auto socket = Socket();
-        socket.handleRequests();
+        handleRequests();
     } catch (std::runtime_error& error) {
         std::cout << error.what() << std::endl;
         exit(1);
