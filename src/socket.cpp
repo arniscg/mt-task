@@ -12,26 +12,42 @@
 #define SERVICE_ID "my-service-123"
 #define SERVICE_ID_LEN 15
 
-void handleRequests() {
-    int socketfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socketfd == -1) {
+Socket::Socket() {
+    this->fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (this->fd == -1) {
         throw std::runtime_error("Failed to create a socket, error: " + std::string(strerror(errno)));
     }
 
-    std::cout << "Socket created" << std::endl;
+    std::cout << "Created socket " << this->fd << std::endl;
+}
+
+Socket::Socket(int fd) {
+    this->fd = fd;
+}
+
+Socket::~Socket() {
+    if (close(this->fd) == -1) {
+        std::cout << "Failed to close socket << " << this->fd << ", error: " << strerror(errno) << std::endl;
+    } else {
+        std::cout << "Socket " << this->fd << " closed" << std::endl;
+    }
+}
+
+void handleRequests() {
+    auto sock = Socket();
 
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(4123);
-    if (bind(socketfd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+    if (bind(sock.fd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         throw std::runtime_error("Failed to bind a socket, error: " + std::string(strerror(errno)));
     }
 
     std::cout << "Socket bound" << std::endl;
 
-    if (listen(socketfd, LISTEN_BACKLOG) == -1) {
+    if (listen(sock.fd, LISTEN_BACKLOG) == -1) {
         throw std::runtime_error("Failed to start socket listening, error: " + std::string(strerror(errno)));
     }
 
@@ -40,49 +56,34 @@ void handleRequests() {
     sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     while (true) {
-        int newSocketfd = accept(socketfd, (struct sockaddr *) &client_addr, &client_addr_len);
-        if (newSocketfd == -1) {
+        int newSockFd = accept(sock.fd, (struct sockaddr *) &client_addr, &client_addr_len);
+        if (newSockFd == -1) {
             std::cout << "Socket accept error: " << strerror(errno) << std::endl;
             continue;
         }
 
-        std::cout << "Accepted new connection, socket: " << newSocketfd << std::endl;
+        auto newSock = Socket(newSockFd);
+
+        std::cout << "Accepted new connection, socket: " << newSock.fd << std::endl;
 
         /**
          * Now respond with the service ID
         */
         char buffer[SERVICE_ID_LEN];
         memcpy(&buffer, SERVICE_ID, SERVICE_ID_LEN);
-        int ret = write(newSocketfd, &buffer, SERVICE_ID_LEN);
+        int ret = write(newSock.fd, &buffer, SERVICE_ID_LEN);
         if (ret == -1) {
             std::cout << "Failed to write: " << strerror(errno) << std::endl;
         } else if (ret < SERVICE_ID_LEN) {
-            std::cout << "Wrote to little data. Expected " << SERVICE_ID_LEN << ", sent" << ret << std::endl;
+            std::cout << "Wrote too little data. Expected " << SERVICE_ID_LEN << ", sent" << ret << std::endl;
         }
 
         std::cout << "Responded with service ID" << std::endl;
-
-        if (close(newSocketfd) == -1) {
-            std::cout << "Failed to close socket << " << socket << ", error: " << strerror(errno) << std::endl;
-        } else {
-            std::cout << "Socket " << socket << " closed" << std::endl;
-        }
-    }
-    
-    if (close(socketfd) == -1) {
-        std::cout << "Failed to close socket << " << socket << ", error: " << strerror(errno) << std::endl;
-    } else {
-        std::cout << "Socket " << socket << " closed" << std::endl;
     }
 }
 
 bool checkIpAddress(const char* ip) {
-    int socketfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socketfd == -1) {
-        throw std::runtime_error("Failed to create a socket, error: " + std::string(strerror(errno)));
-    }
-
-    std::cout << "Socket created" << std::endl;
+    auto sock = Socket();
 
     /**
      * Add timeout for the second read method.
@@ -91,7 +92,7 @@ bool checkIpAddress(const char* ip) {
     struct timeval tv;
     tv.tv_sec = 1;
     tv.tv_usec = 0;
-    if (setsockopt(socketfd, SOL_SOCKET, SO_RCVTIMEO, (const char*) &tv, sizeof(tv)) == -1) {
+    if (setsockopt(sock.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*) &tv, sizeof(tv)) == -1) {
         throw std::runtime_error("Failed to set socket timeout, error: " + std::string(strerror(errno)));
     }
 
@@ -102,13 +103,8 @@ bool checkIpAddress(const char* ip) {
     inet_pton(AF_INET, ip, &(addr.sin_addr));
 
 
-    if (connect(socketfd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+    if (connect(sock.fd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         std::cout << "Failed to connect, error: " << strerror(errno) << std::endl;
-        if (close(socketfd) == -1) {
-            std::cout << "Failed to close socket << " << socket << ", error: " << strerror(errno) << std::endl;
-        } else {
-            std::cout << "Socket " << socket << " closed" << std::endl;
-        }
         return false;
     }
 
@@ -117,17 +113,10 @@ bool checkIpAddress(const char* ip) {
     */
     std::cout << "Waiting for response..." << std::endl;
     char buffer[SERVICE_ID_LEN];
-    if (read(socketfd, &buffer, SERVICE_ID_LEN) == -1) {
+    if (read(sock.fd, &buffer, SERVICE_ID_LEN) == -1) {
         std::cout << "Failed to read data, error: " << strerror(errno) << std::endl;
         return false;
     }
-
-    if (close(socketfd) == -1) {
-        std::cout << "Failed to close socket << " << socket << ", error: " << strerror(errno) << std::endl;
-    } else {
-        std::cout << "Socket " << socket << " closed" << std::endl;
-    }
-
     std::cout << "Received data: " << buffer << std::endl;
 
     return strcmp(buffer, SERVICE_ID) == 0;
