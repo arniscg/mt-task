@@ -40,7 +40,7 @@ void handleRequests() {
     sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     while (true) {
-        int newSocketfd = accept(socketfd, (struct sockaddr *) &addr, &client_addr_len);
+        int newSocketfd = accept(socketfd, (struct sockaddr *) &client_addr, &client_addr_len);
         if (newSocketfd == -1) {
             std::cout << "Socket accept error: " << strerror(errno) << std::endl;
             continue;
@@ -62,7 +62,7 @@ void handleRequests() {
 
         std::cout << "Responded with service ID" << std::endl;
 
-        if (close(socketfd) == -1) {
+        if (close(newSocketfd) == -1) {
             std::cout << "Failed to close socket << " << socket << ", error: " << strerror(errno) << std::endl;
         } else {
             std::cout << "Socket " << socket << " closed" << std::endl;
