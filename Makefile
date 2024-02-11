@@ -1,18 +1,9 @@
 CC=g++
 
-all: server client scan arp
+all: service
 
-server: server.o src/socket.o
-	$(CC) -o server server.o src/socket.o
-
-client: client.o src/socket.o
-	$(CC) -o client client.o src/socket.o
-
-scan: scan.o src/socket.o
-	$(CC) -o scan scan.o src/socket.o
-
-arp: arp.o src/socket.o src/arp_cache.o
-	$(CC) -o arp arp.o src/socket.o src/arp_cache.o
+service: service.o src/socket.o src/arp_cache.o src/icmp_scan.o src/logger.o
+	$(CC) -o service service.o src/socket.o src/arp_cache.o src/icmp_scan.o src/logger.o
 
 clean:
-	rm -f *.o src/*.o server client scan arp
+	rm -f *.o src/*.o service

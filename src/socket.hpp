@@ -1,6 +1,10 @@
+#include <netinet/ip.h>
+#include <optional>
+#include <tuple>
+#include <string>
 
 /**
- * Simple wrapper around Linux socket API for RAII purposes.
+ * Wrapper around Linux socket API
 */
 class Socket {
     public:
@@ -8,16 +12,16 @@ class Socket {
 
         Socket();
         Socket(int fd);
+        Socket(int type, int protocol);
+
+        void bindSock(in_addr_t &ipAddr, int port);
+        void startListening();
+        std::optional<std::tuple<Socket,std::string>> waitConnection();
+        void writeMessage(std::string msg);
+        void connectTo(std::string ip, int port);
+        void setReadTimeout(int timeout);
+        void setSendTimeout(int timeout);
+        std::optional<std::string> waitMessage();
+
         ~Socket();
 };
-
-/**
- * Handle incoming requests.
- * This uses blocking socket API!
-*/
-void handleRequests();
-
-/**
- * Check if the IP address runs our service
-*/
-bool checkIpAddress(const char* ip);

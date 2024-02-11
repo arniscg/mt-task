@@ -62,5 +62,6 @@ std::optional<std::string> arpMacAddressLookup(std::string ipAddress) {
     }
 
     // Not found
+    std::cerr << "ARP cache has no entry for address " << ipAddress << std::endl;
     return {};
 }
