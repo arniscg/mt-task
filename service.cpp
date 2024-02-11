@@ -23,12 +23,12 @@ struct Neighbor {
 */
 class NeighborStore {
     public:
-        NeighborStore() {
+        NeighborStore(std::mutex& mutex) : mutex(mutex) {
             this->logger = std::make_unique<Logger>("./neighbor_store.log");
         }
 
         Neighbor get(std::string ip) {
-            std::lock_guard<std::mutex> guard(this->neighMut);
+            std::lock_guard<std::mutex> guard(this->mutex);
 
             if (this->neighbors.count(ip)) {
                 return this->neighbors.at(ip);
@@ -38,7 +38,7 @@ class NeighborStore {
         }
 
         void add(std::string ip, std::string mac) {
-            std::lock_guard<std::mutex> guard(this->neighMut);
+            std::lock_guard<std::mutex> guard(this->mutex);
 
             neighbors[ip] = {
                 .ip = ip,
@@ -49,7 +49,7 @@ class NeighborStore {
         }
 
         void dump(std::string filePath) {
-            std::lock_guard<std::mutex> guard(this->neighMut);
+            std::lock_guard<std::mutex> guard(this->mutex);
 
             std::ofstream stream(filePath, std::ios::out);
 
@@ -62,7 +62,7 @@ class NeighborStore {
 
     private:
         std::unordered_map<std::string, Neighbor> neighbors;
-        std::mutex neighMut;
+        std::mutex& mutex;
         std::unique_ptr<Logger> logger;
 };
 
@@ -209,7 +209,8 @@ class DiscoveryService {
 };
 
 int main(int argc, char const *argv[]) {
-    auto neighStore = NeighborStore();
+    std::mutex neighMutex;
+    auto neighStore = NeighborStore(neighMutex);
     auto responderService = ResponderService(neighStore);
     auto discoveryService = DiscoveryService(neighStore);
 
