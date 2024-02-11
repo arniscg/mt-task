@@ -52,7 +52,7 @@ std::vector<ArpEntry> parseArpCache() {
     return result;
 }
 
-std::optional<std::string> arpMacAddressLookup(std::string ipAddress) {
+std::string arpMacAddressLookup(std::string ipAddress) {
     auto arpCache = parseArpCache();
 
     for (auto const& entry : arpCache) {
@@ -61,7 +61,5 @@ std::optional<std::string> arpMacAddressLookup(std::string ipAddress) {
         }
     }
 
-    // Not found
-    std::cerr << "ARP cache has no entry for address " << ipAddress << std::endl;
-    return {};
+    throw std::runtime_error("ARP cache has no entry for address " + ipAddress);
 }

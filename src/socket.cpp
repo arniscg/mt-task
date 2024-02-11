@@ -104,28 +104,26 @@ void Socket::writeMessage(std::string msg) {
     }
 }
 
-std::optional<std::string> Socket::waitMessage() {
+std::string Socket::waitMessage() {
     char buffer[SERVICE_ID_LEN];
     if (read(this->fd, &buffer, SERVICE_ID_LEN) == -1) {
-        std::cerr << "Failed to read data, error: " << strerror(errno) << std::endl;
-        return {};
+        throw std::runtime_error("Failed to read data, error: " + std::string(strerror(errno)));
     }
     return std::string(buffer);
 }
 
-std::optional<std::tuple<Socket,std::string>> Socket::waitConnection() {
+std::tuple<Socket,std::string> Socket::waitConnection() {
     sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
 
     int newSockFd = accept(this->fd, (struct sockaddr *) &clientAddr, &clientAddrLen);
     if (newSockFd == -1) {
-        return {};
+        throw std::runtime_error("Failed to accept connection, error: " + std::string(strerror(errno)));
     }
 
     char buff[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &clientAddr.sin_addr, buff, sizeof(buff)) == 0) {
-        std::cerr << "Invalid IP address" << std::endl;
-        return {};
+        throw std::runtime_error("Invalid IP address");
     }
 
     return std::make_tuple<Socket,std::string>(Socket(newSockFd), std::string(buff));

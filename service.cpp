@@ -6,7 +6,6 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
-#include <optional>
 #include <iostream>
 #include <fstream>
 #include <arpa/inet.h>
@@ -28,15 +27,14 @@ class NeighborStore {
             this->logger = std::make_unique<Logger>("./neighbor_store.log");
         }
 
-        std::optional<Neighbor> get(std::string ip) {
+        Neighbor get(std::string ip) {
             std::lock_guard<std::mutex> guard(this->neighMut);
 
             if (this->neighbors.count(ip)) {
                 return this->neighbors.at(ip);
             }
 
-            // Doesn't exist
-            return {};
+            throw std::runtime_error("IP doesn't exist: " + ip);
         }
 
         void add(std::string ip, std::string mac) {
@@ -106,10 +104,10 @@ class ResponderService {
             sock.startListening();
             this->logger->log("Started listening");
             while (true) {
-                auto connection = sock.waitConnection(); // This is blocking!
-                if (connection) {
-                    auto& newSock = std::get<0>(connection.value());
-                    auto& ipAddress = std::get<1>(connection.value());
+                try {
+                    auto connection = sock.waitConnection(); // This is blocking!
+                    auto& newSock = std::get<0>(connection);
+                    auto& ipAddress = std::get<1>(connection);
                     this->logger->log("Received connection from IP: " + ipAddress);
                     /**
                      * Respond with the service ID
@@ -120,18 +118,9 @@ class ResponderService {
                     } catch(std::runtime_error& err) {
                         this->logger->log(err.what());
                     }
-
-                    // /**
-                    //  * Add to neighbor store
-                    // */
-                    // auto mac = arpMacAddressLookup(ipAddress);
-                    // if (mac) {
-                    //     this->neighbors.add(ipAddress, mac.value());
-                    // } else {
-                    //     this->neighbors.add(ipAddress, "unknown");
-                    // }
+                } catch (std::runtime_error& err) {
+                    this->logger->log(err.what());
                 }
-
             }
         }
 
@@ -176,24 +165,27 @@ class DiscoveryService {
                             /**
                              * Wait for response
                             */
-                            auto response = sock.waitMessage();
-                            if (response) {
-                                this->logger->log("Received a message: " + response.value());
-                                if (response.value() == "my-service-123") {
+                            try {
+                                auto response = sock.waitMessage();
+                                this->logger->log("Received a message: " + response);
+                                if (response == "my-service-123") {
                                     isService = true;
-                                    auto mac = arpMacAddressLookup(ip);
-                                    if (mac) {
-                                        this->neighbors.add(ip, mac.value());
-                                    } else {
+                                    try {
+                                        auto mac = arpMacAddressLookup(ip);
+                                        this->neighbors.add(ip, mac);
+                                    } catch (std::runtime_error& err) {
+                                        this->logger->log(err.what());
                                         this->neighbors.add(ip, "unknown");
                                     }
                                     break;
                                 }
+                            } catch (std::runtime_error& err) {
+                                this->logger->log(err.what());
                             }
 
                             if (isService) break;
                         } catch (std::runtime_error& err) {
-                            this->logger->log("Failed, error: " + std::string(err.what()));
+                            this->logger->log(err.what());
                         }
                     }
 

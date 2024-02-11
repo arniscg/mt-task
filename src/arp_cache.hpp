@@ -1,5 +1,4 @@
 #include <string>
-#include <optional>
 #include <vector>
 
 struct ArpEntry {
@@ -21,4 +20,4 @@ std::vector<ArpEntry> parseArpCache();
 /**
  * Find a Mac address of an IP address
 */
-std::optional<std::string> arpMacAddressLookup(std::string ipAddress);
+std::string arpMacAddressLookup(std::string ipAddress);
