@@ -21,12 +21,23 @@ Socket::Socket() {
     std::cout << "Created socket " << this->fd << std::endl;
 }
 
+/**
+ * Wrap an existing file descriptor.
+*/
 Socket::Socket(int fd) {
     this->fd = fd;
 }
 
 Socket::~Socket() {
+    /**
+     * Note: When program is killed, the socket wont be closed.
+     *    The OS will handle cleaning up the sockets.
+     *    Alternatively one could implement signal handling to close sockets before exiting.
+    */
     if (close(this->fd) == -1) {
+        /**
+         * If a socket can't be closed there is nothing else to do, just print a warning.
+        */
         std::cout << "Failed to close socket << " << this->fd << ", error: " << strerror(errno) << std::endl;
     } else {
         std::cout << "Socket " << this->fd << " closed" << std::endl;
@@ -39,7 +50,7 @@ void handleRequests() {
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY); // Receive messages from any IP
     addr.sin_port = htons(4123);
     if (bind(sock.fd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         throw std::runtime_error("Failed to bind a socket, error: " + std::string(strerror(errno)));
