@@ -1,3 +1,5 @@
+#pragma once
+
 #include <netinet/ip.h>
 #include <tuple>
 #include <string>

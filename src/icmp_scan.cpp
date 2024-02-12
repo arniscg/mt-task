@@ -1,5 +1,5 @@
-#include "icmp_scan.hpp"
-#include "socket.hpp"
+#include "include/icmp_scan.hpp"
+#include "include/socket.hpp"
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
