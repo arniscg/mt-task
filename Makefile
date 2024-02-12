@@ -1,4 +1,4 @@
-CC=g++ -Wall
+CC=g++ -O3 -Wall
 SOURCES = $(wildcard src/*.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 LIBS=-lpthread

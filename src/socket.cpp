@@ -114,7 +114,7 @@ void Socket::writeMessage(std::string msg) {
 }
 
 std::string Socket::waitMessage() {
-    char buffer[sizeof(SERVICE_NAME)];
+    char buffer[sizeof(SERVICE_NAME)] = {0};
     if (read(this->fd, &buffer, sizeof(buffer)) == -1) {
         throw std::runtime_error("Failed to read data, error: " + std::string(strerror(errno)));
     }
