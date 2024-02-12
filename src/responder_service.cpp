@@ -7,7 +7,7 @@ ResponderService::ResponderService(NeighborStore& neighbors) : neighbors(neighbo
 
 void ResponderService::start() {
     auto sock = Socket();
-    this->logger->log("Created socket " + std::to_string(sock.fd));
+    // this->logger->log("Created socket " + std::to_string(sock.fd));
     sock.setLogger([this](std::string msg) { this->logger->log(msg); });
 
     /**

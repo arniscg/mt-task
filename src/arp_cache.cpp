@@ -15,8 +15,8 @@ std::vector<ArpEntry> parseArpCache() {
     while(std::getline(stream, line)) {
         auto values = splitString(line);
 
-        if (values.size() != 6) {
-            throw std::runtime_error("Failed to parse ARP cache, expected 6 values, got " + std::to_string(values.size()));
+        if (values.size() != 5) {
+            throw std::runtime_error("Failed to parse ARP cache, expected 5 values, got " + std::to_string(values.size()));
         }
 
         result.push_back(ArpEntry{

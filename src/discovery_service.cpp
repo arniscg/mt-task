@@ -16,6 +16,9 @@ void DiscoveryService::start() {
         auto gatewayAddresses = getGatewayAddresses();
         auto localAddresses = getLocalAddresses();
 
+        // Clear the neighbor store
+        this->neighbors.clear();
+
         for (auto& ip : ipAddresses) {
             // Ignore gateway addresses
             if (std::find(gatewayAddresses.begin(), gatewayAddresses.end(), ip) != gatewayAddresses.end()) {
@@ -35,7 +38,7 @@ void DiscoveryService::start() {
             bool isService = false;
             for (port = portMin; port <= portMax; ++port) {
                 auto sock = Socket();
-                this->logger->log("Created socket " + std::to_string(sock.fd));
+                // this->logger->log("Created socket " + std::to_string(sock.fd));
                 sock.setLogger([this](std::string msg) { this->logger->log(msg); });
 
                 /** 

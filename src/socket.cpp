@@ -19,7 +19,7 @@ Socket::Socket() {
         throw std::runtime_error("Failed to create a socket, error: " + std::string(strerror(errno)));
     }
 
-    this->log("Created socket << " + std::to_string(this->fd));
+    // this->log("Created socket << " + std::to_string(this->fd));
 }
 
 /**
@@ -50,7 +50,7 @@ Socket::~Socket() {
         this->log("Failed to close socket " + std::to_string(this->fd) + ", error: " + std::string(strerror(errno)));
     }
 
-    this->log("Closed socket " + std::to_string(this->fd));
+    // this->log("Closed socket " + std::to_string(this->fd));
 }
 
 void Socket::setLogger(std::function<void(std::string)> log) {
@@ -134,7 +134,7 @@ Socket Socket::waitConnection() {
     if (newSockFd == -1) {
         throw std::runtime_error("Failed to accept connection, error: " + std::string(strerror(errno)));
     }
-    this->log("Accepted connection, new socket " + std::to_string(newSockFd));
+    this->log("Accepted connection");
 
     char buff[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &clientAddr.sin_addr, buff, sizeof(buff)) == 0) {
