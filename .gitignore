@@ -1,6 +1,5 @@
 .vscode
-client
-server
+service
 *.o
 *.txt
 *.log
