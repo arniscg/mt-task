@@ -2,6 +2,7 @@
 #include "src/arp_cache.hpp"
 #include "src/icmp_scan.hpp"
 #include "src/logger.hpp"
+#include "src/utils.hpp"
 #include <thread>
 #include <string>
 #include <unordered_map>
@@ -40,7 +41,7 @@ class NeighborStore {
         void add(std::string ip, std::string mac) {
             std::lock_guard<std::mutex> guard(this->mutex);
 
-            neighbors[ip] = {
+            this->neighbors[ip] = {
                 .ip = ip,
                 .mac = mac
             };
@@ -58,6 +59,14 @@ class NeighborStore {
             }
 
             this->logger->log("Wrote neighbors to file");
+        }
+
+        void clear() {
+            std::lock_guard<std::mutex> guard(this->mutex);
+
+            this->neighbors.clear();
+
+            this->logger->log("Neighbors cleared");
         }
 
     private:
@@ -80,6 +89,7 @@ class ResponderService {
         void start() {
             auto sock = Socket();
             this->logger->log("Created socket " + std::to_string(sock.fd));
+            sock.setLogger([this](std::string msg) { this->logger->log(msg); });
 
             /**
              * Bind the socket using one of the ports.
@@ -105,10 +115,7 @@ class ResponderService {
             this->logger->log("Started listening");
             while (true) {
                 try {
-                    auto connection = sock.waitConnection(); // This is blocking!
-                    auto& newSock = std::get<0>(connection);
-                    auto& ipAddress = std::get<1>(connection);
-                    this->logger->log("Received connection from IP: " + ipAddress);
+                    auto newSock = sock.waitConnection(); // This is blocking!
                     /**
                      * Respond with the service ID
                     */
@@ -142,14 +149,30 @@ class DiscoveryService {
         void start() {
             while (true) {
                 auto ipAddresses = scanLocalIps();
+                auto gatewayAddresses = getGatewayAddresses();
+                auto localAddresses = getLocalAddresses();
 
                 for (auto& ip : ipAddresses) {
+                    // Ignore gateway addresses
+                    if (std::find(gatewayAddresses.begin(), gatewayAddresses.end(), ip) != gatewayAddresses.end()) {
+                        this->logger->log("Skipping address: " + ip);
+                        continue;
+                    }
+
+                    // Ignore own addresses
+                    if (std::find(localAddresses.begin(), localAddresses.end(), ip) != localAddresses.end()) {
+                        this->logger->log("Skipping address: " + ip);
+                        continue;
+                    }
+
                     int portMin = 4320;
                     int portMax = 4330;
                     int port = portMin;
                     bool isService = false;
                     for (port = portMin; port <= portMax; ++port) {
                         auto sock = Socket();
+                        this->logger->log("Created socket " + std::to_string(sock.fd));
+                        sock.setLogger([this](std::string msg) { this->logger->log(msg); });
 
                         /** 
                          * Add timeout.

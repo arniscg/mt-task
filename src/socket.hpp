@@ -1,6 +1,9 @@
 #include <netinet/ip.h>
 #include <tuple>
 #include <string>
+#include <functional>
+
+typedef void (*LoggerFunction)(std::string msg); 
 
 /**
  * Wrapper around Linux socket API
@@ -13,9 +16,10 @@ class Socket {
         Socket(int fd);
         Socket(int type, int protocol);
 
+        void setLogger(std::function<void(std::string)> log);
         void bindSock(in_addr_t &ipAddr, int port);
         void startListening();
-        std::tuple<Socket,std::string> waitConnection();
+        Socket waitConnection();
         void writeMessage(std::string msg);
         void connectTo(std::string ip, int port);
         void setReadTimeout(int timeout);
@@ -23,4 +27,7 @@ class Socket {
         std::string waitMessage();
 
         ~Socket();
+
+    private:
+        std::function<void(std::string)> log = [](std::string){};
 };

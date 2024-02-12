@@ -18,6 +18,8 @@ Socket::Socket() {
     if (this->fd == -1) {
         throw std::runtime_error("Failed to create a socket, error: " + std::string(strerror(errno)));
     }
+
+    this->log("Created socket << " + std::to_string(this->fd));
 }
 
 /**
@@ -45,10 +47,18 @@ Socket::~Socket() {
          * If a socket can't be closed there is nothing else to do
         */
         // std::cerr << "Failed to close socket " << this->fd << ", error: " << strerror(errno) << std::endl;
+        this->log("Failed to close socket " + std::to_string(this->fd) + ", error: " + std::string(strerror(errno)));
     }
+
+    this->log("Closed socket " + std::to_string(this->fd));
 }
 
-void Socket::bindSock(in_addr_t &ipAddr, int port) {
+void Socket::setLogger(std::function<void(std::string)> log) {
+    this->log = log;
+}
+
+void Socket::bindSock(in_addr_t &ipAddr, int port)
+{
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -96,9 +106,13 @@ void Socket::connectTo(std::string ip, int port) {
 }
 
 void Socket::writeMessage(std::string msg) {
-    int ret = write(this->fd, msg.c_str(), msg.length());
+    char buffer[SERVICE_ID_LEN];
+    memcpy(&buffer, SERVICE_ID, SERVICE_ID_LEN);
+
+    int ret = write(this->fd, buffer, SERVICE_ID_LEN);
+    // int ret = write(this->fd, msg.c_str(), msg.length());
     if (ret == -1) {
-        throw std::runtime_error("Failed to write: " + std::string(strerror(errno)));
+        throw std::runtime_error("Failed to write: " + std::string(strerror(errno)) + ", socket: " + std::to_string(this->fd));
     } else if (ret < SERVICE_ID_LEN) {
         std::cerr << "Wrote too little data. Expected " << SERVICE_ID_LEN << ", sent" << ret << std::endl;
     }
@@ -112,7 +126,7 @@ std::string Socket::waitMessage() {
     return std::string(buffer);
 }
 
-std::tuple<Socket,std::string> Socket::waitConnection() {
+Socket Socket::waitConnection() {
     sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
 
@@ -120,11 +134,15 @@ std::tuple<Socket,std::string> Socket::waitConnection() {
     if (newSockFd == -1) {
         throw std::runtime_error("Failed to accept connection, error: " + std::string(strerror(errno)));
     }
+    this->log("Accepted connection, new socket " + std::to_string(newSockFd));
 
     char buff[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &clientAddr.sin_addr, buff, sizeof(buff)) == 0) {
         throw std::runtime_error("Invalid IP address");
     }
 
-    return std::make_tuple<Socket,std::string>(Socket(newSockFd), std::string(buff));
+    auto newSocket = Socket(newSockFd);
+    newSocket.setLogger(this->log);
+
+    return newSocket;
 }
