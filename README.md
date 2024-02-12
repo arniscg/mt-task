@@ -11,7 +11,7 @@ Service starts a **ResponderService** in a separate thread which:
 4. Repeat from 2.
 
 Service starts a **DiscoveryService** in the main thread which:
-1. Discovers local IP addresses by sending ICMP request (ping) to the all host multicast address 224.0.0.1
+1. Discovers local IP addresses by sending ICMP request (ping) to the "all-host" multicast address: 224.0.0.1
 2. For each address and each port in the range 4320-4330 creates a TCP/IP connection and expects to receive message with our service ID
 3. For each discovered service, gets a MAC address from local ARP cache
 4. Stores the IP and MAC addresses of neighbors in a file `neighbors.txt`

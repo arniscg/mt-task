@@ -1,4 +1,5 @@
 #include "include/socket.hpp"
+#include "../config.h"
 #include <sys/socket.h> // socket
 #include <errno.h> // errno
 #include <string.h> // strerror
@@ -10,8 +11,6 @@
 #include <string>
 
 #define LISTEN_BACKLOG 100
-#define SERVICE_ID "my-service-123"
-#define SERVICE_ID_LEN 15
 
 Socket::Socket() {
     this->fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -106,17 +105,17 @@ void Socket::connectTo(std::string ip, int port) {
 }
 
 void Socket::writeMessage(std::string msg) {
-    int ret = write(this->fd, msg.c_str(), msg.length());
+    int ret = write(this->fd, msg.c_str(), msg.size());
     if (ret == -1) {
         throw std::runtime_error("Failed to write: " + std::string(strerror(errno)) + ", socket: " + std::to_string(this->fd));
-    } else if (ret < SERVICE_ID_LEN) {
-        std::cerr << "Wrote too little data. Expected " << SERVICE_ID_LEN << ", sent" << ret << std::endl;
+    } else if (ret < msg.size()) {
+        std::cerr << "Wrote too little data. Expected " << msg.size() << ", sent" << ret << std::endl;
     }
 }
 
 std::string Socket::waitMessage() {
-    char buffer[SERVICE_ID_LEN];
-    if (read(this->fd, &buffer, SERVICE_ID_LEN) == -1) {
+    char buffer[sizeof(SERVICE_NAME)];
+    if (read(this->fd, &buffer, sizeof(buffer)) == -1) {
         throw std::runtime_error("Failed to read data, error: " + std::string(strerror(errno)));
     }
     return std::string(buffer);
