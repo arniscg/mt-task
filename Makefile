@@ -1,9 +1,12 @@
-CC=g++
+CC=g++ -Wall
+SOURCES = $(wildcard src/*.cpp)
+OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
+LIBS=-lpthread
 
 all: service
 
-service: service.o src/socket.o src/arp_cache.o src/icmp_scan.o src/logger.o src/utils.o src/neighbor_store.o src/discovery_service.o src/responder_service.o
-	$(CC) -o service service.o src/socket.o src/arp_cache.o src/icmp_scan.o src/logger.o src/utils.o src/neighbor_store.o src/discovery_service.o src/responder_service.o -Wall -lpthread
+service: service.o $(OBJECTS)
+	$(CC) service.o -o service $(OBJECTS) $(LIBS)
 
 clean:
 	rm -f *.o src/*.o service
