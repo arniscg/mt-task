@@ -4,6 +4,7 @@
 #include "include/icmp_scan.hpp"
 #include "include/socket.hpp"
 #include <thread>
+#include <algorithm>
 
 DiscoveryService::DiscoveryService(NeighborStore& neighbors) : neighbors(neighbors) {
     this->logger = std::make_unique<Logger>("./discovery_service.log");
