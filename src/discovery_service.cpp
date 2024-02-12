@@ -3,6 +3,7 @@
 #include "include/arp_cache.hpp"
 #include "include/icmp_scan.hpp"
 #include "include/socket.hpp"
+#include "../config.h"
 #include <thread>
 #include <algorithm>
 
@@ -32,11 +33,9 @@ void DiscoveryService::start() {
                 continue;
             }
 
-            int portMin = 4320;
-            int portMax = 4330;
-            int port = portMin;
+            int port = SERVICE_PORT_MIN;
             bool isService = false;
-            for (port = portMin; port <= portMax; ++port) {
+            for (port; port <= SERVICE_PORT_MAX; ++port) {
                 auto sock = Socket();
                 // this->logger->log("Created socket " + std::to_string(sock.fd));
                 sock.setLogger([this](std::string msg) { this->logger->log(msg); });
@@ -89,6 +88,6 @@ void DiscoveryService::start() {
         this->neighbors.dump("./neighbors.txt");
 
         // Repeat after 30s
-        std::this_thread::sleep_for(std::chrono::seconds(30));
+        std::this_thread::sleep_for(std::chrono::seconds(SERVICE_PERIOD));
     }
 }

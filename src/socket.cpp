@@ -106,11 +106,7 @@ void Socket::connectTo(std::string ip, int port) {
 }
 
 void Socket::writeMessage(std::string msg) {
-    char buffer[SERVICE_ID_LEN];
-    memcpy(&buffer, SERVICE_ID, SERVICE_ID_LEN);
-
-    int ret = write(this->fd, buffer, SERVICE_ID_LEN);
-    // int ret = write(this->fd, msg.c_str(), msg.length());
+    int ret = write(this->fd, msg.c_str(), msg.length());
     if (ret == -1) {
         throw std::runtime_error("Failed to write: " + std::string(strerror(errno)) + ", socket: " + std::to_string(this->fd));
     } else if (ret < SERVICE_ID_LEN) {
