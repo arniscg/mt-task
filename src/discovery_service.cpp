@@ -57,7 +57,7 @@ void DiscoveryService::start() {
                     try {
                         auto response = sock.waitMessage();
                         this->logger->log("Received a message: " + response);
-                        if (response == "my-service-123") {
+                        if (response == SERVICE_NAME) {
                             isService = true;
                             try {
                                 auto mac = arpMacAddressLookup(ip);
